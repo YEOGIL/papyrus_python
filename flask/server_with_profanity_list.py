@@ -45,11 +45,23 @@ def generate_letter():
         # author, topic, style 키가 들어있다고 가정
         author = data.get("author", "무명 작가")
         documentType = data.get("documentType", "단문")
+        theme_list = data.get("themeType", [])
+        if not theme_list:  # 빈 리스트거나 None일 때
+            theme_str = "테마 없음"
+        else:
+            # ["결혼","입학"] → "결혼, 입학"
+            if isinstance(theme_list, list):
+                theme_str = ", ".join(theme_list)
+            else:
+                # 혹시 문자열(잘못된 형태)로 온 경우 대비
+                theme_str = str(theme_list)
         scenario = data.get("scenario", "주제 없음")
+        
         app.logger.info(
             "\n--- Request ---\n"
             f"author: {author}\n"
             f"documentType: {documentType}\n"
+            f"themeType: {theme_list}\n"
             f"scenario: {scenario}\n"
         )
 
@@ -101,6 +113,7 @@ def generate_letter():
             "다음 조건에 따라 글을 작성해 주세요.\n\n"
             f"- 작가: {author}\n"
             f"- 글의 종류: {documentType}\n"
+            f"- 글의 테마: {theme_str}\n"
             f"- 글의 주제 및 상황: {scenario}\n\n"
             "조건의 설명을 포함하지 말고, 글만 생성해야 합니다."
             "글이 중간에 끊기지 않고, 마지막 문장까지 매끄럽게 이어져야 합니다."
@@ -125,21 +138,6 @@ def generate_letter():
             if delta and delta.content:
                 generated_text += delta.content
 
-        '''
-        # 마지막 문장이 완결되었는지 확인 ('.', '!', '?' 등으로 끝나야 함)
-        generated_text = generated_text.strip()
-        if not generated_text.endswith((".", "!", "?")):
-            # 마지막 문장부호가 나타난 마지막 인덱스를 찾음
-            last_punct_idx = max(generated_text.rfind(p) for p in ".!?")
-            if last_punct_idx != -1:
-                # 마지막 완결된 문장까지만 남김
-                generated_text = generated_text[: last_punct_idx + 1]
-                app.logger.info("[Deleted] Incomplete sentence removed.\n")
-            else:
-                app.logger.info(
-                    "No sentence-ending punctuation found; returning as is.\n"
-                )
-        '''
         return jsonify(
             {
                 "isSuccessful": True,
